@@ -1,0 +1,40 @@
+/* Set the size of the div element that contains the map */
+#map{
+    height: 400px;  /* The height is 400 pixels */
+    width: 100%;  /* The width is the width of the web page */
+}
+
+.fl{
+    float: left;
+}
+  
+.fr{
+    float: right;
+}
+  
+.heading{
+    margin: 10px auto;
+    text-align: center;
+}
+
+#map {
+    /* position: absolute; */
+    margin: 0px auto 0px;
+    top: 0;
+    bottom: 0;
+    width: 1200px;
+    height: 550px;
+}
+
+.dateChoose{
+    height: 40px;
+    width: 600px;
+    /* border: 1px solid black; */
+    margin: 5px auto;
+}
+
+button .submit{
+    display: inline-block;
+    overflow: auto;
+    position: absolute;
+}
