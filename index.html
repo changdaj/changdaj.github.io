@@ -1,351 +1,62 @@
-<!-- GEOM90007 Spatial Visualisation
-Assignment2: a interactive map design
-Changda Jiang
-879725
-changdaj@student.unimelb.edu.au 
-file: HTML-->
-
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-	<title>VIC-Crashes in Five Years</title>
-	<link rel="stylesheet" type="text/css" href="879725_style.css">
-	<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.48.0/mapbox-gl.js'></script>
-	<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-	<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.48.0/mapbox-gl.css' rel='stylesheet' />
+    <link rel="stylesheet" href="test_api.css">
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.4.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.4.0/mapbox-gl.css' rel='stylesheet' />
+    
+    <!-- direction api -->
+	<script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.0.2/mapbox-gl-directions.js'></script>
+	<link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.0.2/mapbox-gl-directions.css' type='text/css' />
+    
+    <!-- Promise polyfill script required to use Mapbox GL Geocoder in IE 11 -->
+    <script src="https://cdn.jsdelivr.net/npm/es6-promise@4/dist/es6-promise.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/es6-promise@4/dist/es6-promise.auto.min.js"></script>
+
+    <meta charset="UTF-8">
+    <title>Wifi Analysis - Path Finding</title>
 </head>
-
 <body>
-	<!-- map -->
-	<div id='map' class="fl"></div>
+    <div class="heading">
+        <h1>Wifi Analysis - Path Finding at Unimelb</h1>
+    </div>
 
-	<!-- title, information of Crashes  -->
-	<div class='map-overlay' id='title'>
-		<h2>Last Five Years Victoria Traffic Accident Map</h2>
-		<div id='info'><p>Hover over a point!</p></div>
-	</div>
+    <div class="dateChoose">Start Date
+        <input type="datetime-local" class="startDate" name="trip-start"
+            value="2018-05-30T19:00" min="2018-05-01T00:00" max="2018-06-30T23:00">
+            &emsp; End Date
+            <input type="datetime-local" class="endDate" name="trip-start"
+            value="2018-06-30T19:00" min="2018-05-01T00:00" max="2018-06-30T00:00">
+        <button class="submit fr">Submit</button>
+    </div>
 
-	<!-- legend  -->
-	<div class='map-overlay' id='legend'>
-		<ul>
-			<li>
-				<div class="non_injury_accident fl circle"></div>
-				Non & Other injury accident
-				<div class="button fr">
-					<input type="checkbox" id="non_injury" onclick="non_injury_function()" checked>
-				</div>
-			</li>
-			
-			<li>
-				<div class="serious_injury_accident fl circle"></div>
-				Serious injury accident
-				<div class="button fr">
-					<input type="checkbox" id="serious_injury" onclick="serious_injury_function()" checked>
-				</div>
-			</li>
-			<li>
-				<div class="fatal_accident fl circle"></div>
-				Fatal accident
-				<div class="button fr">
-					<input type="checkbox" id="fatal" onclick="fatal_function()" checked>
-				</div>
-			</li>
-		</ul>
-	</div>
-	
-	<!-- friendly reminder and assignemnt information -->
-	<div id="intro">
-		Hover line chart, column chart and points in map for more details.<br>
+    <div id="map"> </div>
 
-		GEOM90007 Assignment2 Changda Jiang 879725
-	</div>
+    <script type="text/javascript">
+        mapboxgl.accessToken = 'pk.eyJ1IjoiY2hhbmdkYWoiLCJhIjoiY2p6dWZ4ZnFpMDE1cjNtcGY4bTJ1Zm8ybyJ9.q9E3nHqoKER3Le3GWobzDA';
 
-	<!-- line and column chart legend-->
-	<div id="rightChart" class="fr">
-		<div id="lineChart" ></div>
+        // add base map 
+        var map = new mapboxgl.Map({
+            container: 'map',
+            //style: 'mapbox://styles/mapbox/streets-v11',
+            style: 'mapbox://styles/mapbox/light-v8',
+            center: [144.961027, -37.797847],
+            zoom: 15,
+        });
 
-		<div id="colChart" ></div>
 
-		<div id="colChartLegend">
-			<ul>
-				<li><i class="red"></i> Metropolitan South East Region</li>
-				<li><i class="blue"></i>Metropolitan North West Region</li>
-				<li><i class="green"></i>South Western Region</li>
-				<li><i class="purple"></i>North Eastern Region</li>
-				<li><i class="orange"></i>Eastern Region</li>
-				<li><i class="yellow"></i>Western Region</li>
-				<li><i class="brown"></i>Northern Region</li>
-			</ul>
-		</div>
-	</div>
+        // add a route planner
+        map.addControl(new MapboxDirections({
+            accessToken: mapboxgl.accessToken
+            }), 
+            'top-left'
+        );
 
-	<!-- javascript -->
-	<script type="text/javascript">
-		mapboxgl.accessToken = 'pk.eyJ1IjoiY2hhbmdkYWoiLCJhIjoiY2p6dWZ4ZnFpMDE1cjNtcGY4bTJ1Zm8ybyJ9.q9E3nHqoKER3Le3GWobzDA';
+        map.addControl(new mapboxgl.NavigationControl());
 
-		// add base map 
-		var map = new mapboxgl.Map({
-  			container: 'map',
-  			style: 'mapbox://styles/mapbox/light-v9',
-  			center: [144.96, -37.81],
-			zoom: 13,
-		});
+        // map.on('load', function(){
 
-		// add scale and navigation control 
-		var scale = new mapboxgl.ScaleControl({
-			maxWidth:80,
-			unit:'imperial',
-		});
-
-		map.addControl(scale, 'bottom-right');
-		scale.setUnit('metric');
-
-		map.addControl(new mapboxgl.NavigationControl());
-		
-		map.on('load', function() {
-			
-			// add layer by feature - non injury accident 
-		  	map.addLayer({
-  				id: 'non_injury_points',
-    			type: 'circle',
-    			source:{
-    				type: 'vector',
-      				url: 'mapbox://changdaj.7uhpt6nd'
-				},
-    			'source-layer': 'A2_Crashes_Last_Five_Years-dnn7fz',
-				paint: {
-     			'circle-color': '#fee5d9',
-            	'circle-stroke-width': 1, 
-            	'circle-stroke-color': '#888888',
-            	'circle-opacity': 0.8,
-            	 'circle-radius': {
-        			'stops': [
-          			[11, 2],
-          			[22, 160]
-        			],
-        			'base': 1.75
-            	},
-				},
-				'filter': ['==', 'SEVERITY', 'Non injury accident']
-  			})  
-		
-			// add layer by feature - other injury accident 
-			map.addLayer({
-  				id: 'other_injury_points',
-    			type: 'circle',
-    			source:{
-    				type: 'vector',
-      				url: 'mapbox://changdaj.7uhpt6nd'
-				},
-    			'source-layer': 'A2_Crashes_Last_Five_Years-dnn7fz',
-				paint: {
-     			'circle-color': '#fcae91',
-            	'circle-stroke-width': 1, 
-            	'circle-stroke-color': '#888888',
-            	'circle-opacity': 0.8,
-            	 'circle-radius': {
-        			'stops': [
-          			[11, 2],
-          			[22, 160]
-        			],
-        			'base': 1.75
-            	},
-				},
-				'filter': ['==', 'SEVERITY', 'Other injury accident']
-  			}) 
-
-			// add layer by feature - serious injury accident 
-		  	map.addLayer({
-  				id: 'serious_injury_points',
-    			type: 'circle',
-    			source:{
-    				type: 'vector',
-      				url: 'mapbox://changdaj.7uhpt6nd'
-				},
-    			'source-layer': 'A2_Crashes_Last_Five_Years-dnn7fz',
-				paint: {
-     			'circle-color': '#fb6a4a',
-            	'circle-stroke-width': 1, 
-            	'circle-stroke-color': '#888888',
-            	'circle-opacity': 0.8,
-            	 'circle-radius': {
-        			'stops': [
-          			[11, 2],
-          			[22, 160]
-        			],
-        			'base': 1.75
-            	},
-				},
-				'filter': ['==', 'SEVERITY', 'Serious injury accident']
-  			})
-
-			// add layer by feature - fatal accident 
-			map.addLayer({
-  				id: 'fatal_points',
-    			type: 'circle',
-    			source:{
-    				type: 'vector',
-      				url: 'mapbox://changdaj.7uhpt6nd'
-				},
-    			'source-layer': 'A2_Crashes_Last_Five_Years-dnn7fz',
-				paint: {
-     			'circle-color': '#cb181d',
-            	'circle-stroke-width': 1, 
-            	'circle-stroke-color': '#888888',
-            	'circle-opacity': 0.8,
-            	 'circle-radius': {
-        			'stops': [
-          			[11, 2],
-          			[22, 160]
-        			],
-        			'base': 1.75
-            	},
-				},
-				'filter': ['==', 'SEVERITY', 'Fatal accident']
-  			})
-
-			
-			// add mousemove function 
-			map.on('mousemove', function(i) {
-				var carshInfo = map.queryRenderedFeatures(i.point, { 
-					layers: ['non_injury_points','other_injury_points',
-					'serious_injury_points','fatal_points']
-					});
-				if (carshInfo.length > 0) {
-					document.getElementById('info').innerHTML = 
-					'<p>' + "Date: " + carshInfo[0].properties.ACCIDENT_DATE + 
-					'<p>' + "Time: " + carshInfo[0].properties.ACCIDENT_TIME + 
-					'<p>' + "Severity: " + carshInfo[0].properties.SEVERITY + 
-					'<p>' + "Accident Type: " + carshInfo[0].properties.ACCIDENT_TYPE + 
-					'<p>' + "Clicking point can view more details :)".fontcolor("red")
-					'</p>'; 
-					} 
-    			else {
-					document.getElementById('info').innerHTML = 
-					'<p>Zoom in or hover a clear point.</p>'.fontcolor("red"); 
-					}
-			});
-			
-			// add other mouse functions
-			var layerNames = ['non_injury_points','other_injury_points',
-					'serious_injury_points','fatal_points']
-
-			for (var i=0;i<layerNames.length;i++){
-				var layerName = layerNames[i];
-
-				map.on('mouseenter', layerName, function () {
-					map.getCanvas().style.cursor = 'pointer'; 
-				});
-
-				// Change it back to a pan icon when it leaves.
-				map.on('mouseleave', layerName, function () {
-					map.getCanvas().style.cursor = ''; 
-					});
-				
-				map.on('click', layerName, function (e) {
-					new mapboxgl.Popup()
-					.setLngLat(e.lngLat)
-					.setHTML("Drunk driving: " + e.features[0].properties.ALCOHOL_RELATED
-							+ "<br> Run offroad: " + e.features[0].properties.RUN_OFFROAD
-							+ "<br> Total person number: " + e.features[0].properties.TOTAL_PERSONS
-					)
-					.addTo(map);
-					});
-
-			}			
-		});
-
-		// add checkbox function 
-		function non_injury_function(){
-			var checkbox = document.getElementById("non_injury");
-			if(checkbox.checked == true){
-				map.setLayoutProperty('non_injury_points', 'visibility', 'visible');
-				map.setLayoutProperty('other_injury_points', 'visibility', 'visible');
-			} else {
-				map.setLayoutProperty('non_injury_points', 'visibility', 'none');
-				map.setLayoutProperty('other_injury_points', 'visibility', 'none');
-
-			}
-		}
-
-		function serious_injury_function(){
-			var checkbox = document.getElementById("serious_injury");
-			if(checkbox.checked == true){
-				map.setLayoutProperty('serious_injury_points', 'visibility', 'visible');
-			} else {
-				map.setLayoutProperty('serious_injury_points', 'visibility', 'none');
-
-			}
-		}
-
-		function fatal_function(){
-			var checkbox = document.getElementById("fatal");
-			if(checkbox.checked == true){
-				map.setLayoutProperty('fatal_points', 'visibility', 'visible');
-			} else {
-				map.setLayoutProperty('fatal_points', 'visibility', 'none');
-
-			}
-		}
-		
-
-		
-		google.charts.load('current', {'packages':['corechart']});
-      	google.charts.setOnLoadCallback(drawLineChart);
-		// add line chart 
-		function drawLineChart(){
-			var data1 = google.visualization.arrayToDataTable([
-          ['Year', 'Occurrence'],
-          ['2014',  14243],
-          ['2015',  14427],
-          ['2016',  14349],
-          ['2017',  12281],
-		  ['2018',  11177]
-        ]);
-
-			var options1 = {
-          		title: '2014-2018 Crashes Occurrence in Victoria',
-          		curveType: 'function',
-          		legend: { position: 'bottom' }
-        	};
-
-			var chart1 = new google.visualization.LineChart(document.getElementById('lineChart'));
-
-        	chart1.draw(data1, options1);
-		}
-
-		google.charts.load("current", {packages:['corechart','bar']});
-    	google.charts.setOnLoadCallback(drawColChart);
-		// add column chart 
-		function drawColChart(){
-			var data2 = google.visualization.arrayToDataTable([
-         		['Rigion', 'Crashes Amount', { role: 'style' }],
-         		['Metropolitan South East Region', 26486, '#e41a1c'],     
-				['Metropolitan North West Region', 26693, '#377eb8'],       
-         		['South Western Region', 5478, '#4daf4a'],
-				['North Eastern Region', 4155, '#984ea3'],
-				['Eastern Region', 4152, '#ff7f00' ],
-				['Western Region', 3830, '#ffff33' ],
-				['Northern Region', 4155, '#a65628' ],
-				
-      	]);
-
-      		var options2 = {
-        		title: "Crashes Distribution in Last Five Years Victoria",
-        		bar: {groupWidth: "95%"},
-        		legend: { position: "none" },
-				hAxis:{
-					baselineColor: '#fff',
-         			gridlineColor: '#fff',
-         			textPosition: 'none',
-       			}
-      		};
-
-      		var chart2 = new google.visualization.ColumnChart(document.getElementById("colChart"));
-      		//chart2.draw(view, options);
-			chart2.draw(data2, options2);
-		}
-	</script>
+        // })
+    </script>
 </body>
 </html>
